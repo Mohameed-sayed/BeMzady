@@ -1,0 +1,277 @@
+"use client"
+
+import React, { useState, useEffect, useContext } from "react"
+import { Link, useNavigate, Outlet, useLocation } from "react-router-dom"
+import { AuthContext } from "../contexts/AuthContext"
+import { userService } from "../services/api"
+import { User, Mail, Phone, MapPin, Package, Heart, Gavel, Settings, LogOut, Edit, Camera, Save, X } from 'lucide-react'
+
+const Profile = () => {
+    const { user, logout } = useContext(AuthContext)
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [activeTab, setActiveTab] = useState("info")
+    const [isEditing, setIsEditing] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
+    const [success, setSuccess] = useState("")
+    
+    // Check if we're on a nested route
+    const isNestedRoute = location.pathname.includes('/profile/') && location.pathname !== '/profile/'
+
+    const [profileData, setProfileData] = useState({
+        username: "",
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone_number: "",
+        address: "",
+        city: "",
+        country: "",
+        bio: "",
+        user_picture: null
+    })
+
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    })
+
+    useEffect(() => {
+        if (user) {
+            setProfileData({
+                username: user.username || "",
+                first_name: user.first_name || "",
+                last_name: user.last_name || "",
+                email: user.email || "",
+                phone_number: user.phone_number || "",
+                address: user.address || "",
+                city: user.city || "",
+                country: user.country || "",
+                bio: user.bio || "",
+                user_picture: user.user_picture || null
+            })
+        }
+    }, [user])
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target
+        setProfileData(prev => ({
+            ...prev,
+            [name]: value
+        }))
+    }
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target
+        setPasswordData(prev => ({
+            ...prev,
+            [name]: value
+        }))
+    }
+
+    const handleProfilePictureChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            // Preview the image
+            const reader = new FileReader()
+            reader.onload = (e) => {
+                setProfileData(prev => ({
+                    ...prev,
+                    user_picture: e.target.result
+                }))
+            }
+            reader.readAsDataURL(file)
+        }
+    }
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+        setError("")
+        setSuccess("")
+
+        try {
+            // Create FormData for file upload
+            const formData = new FormData()
+
+            // Append all profile data
+            Object.keys(profileData).forEach(key => {
+                if (key !== 'user_picture' || (key === 'user_picture' && profileData[key] instanceof File)) {
+                    formData.append(key, profileData[key])
+                }
+            })
+
+            await userService.updateProfile(formData)
+            setSuccess("Profile updated successfully!")
+            setIsEditing(false)
+        } catch (error) {
+            console.error("Error updating profile:", error)
+            setError(error.response?.data?.message || "Failed to update profile. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleUpdatePassword = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+        setError("")
+        setSuccess("")
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setError("New passwords do not match")
+            setLoading(false)
+            return
+        }
+
+        try {
+            await userService.updatePassword(passwordData.currentPassword, passwordData.newPassword)
+            setSuccess("Password updated successfully!")
+            setPasswordData({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: ""
+            })
+        } catch (error) {
+            console.error("Error updating password:", error)
+            setError(error.response?.data?.message || "Failed to update password. Please try again.")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleLogout = () => {
+        logout()
+        navigate("/")
+    }
+
+    if (!user) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-600"></div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                {/* Sidebar */}
+                <div className="lg:col-span-1">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="relative mb-4">
+                                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                                    {profileData.user_picture ? (
+                                        <img
+                                            src={profileData.user_picture || "/placeholder.svg"}
+                                            alt={profileData.username}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <User size={40} className="text-gray-400" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-bold">{profileData.username}</h2>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">{profileData.email}</p>
+                        </div>
+
+                        <nav className="space-y-1">
+                            <button
+                                onClick={() => setActiveTab("info")}
+                                className={`w-full flex items-center px-4 py-2 rounded-md ${activeTab === "info"
+                                        ? "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+                                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    }`}
+                            >
+                                <User size={18} className="mr-3" />
+                                <span>Personal Information</span>
+                            </button>
+
+                            <button
+                                onClick={() => setActiveTab("security")}
+                                className={`w-full flex items-center px-4 py-2 rounded-md ${activeTab === "security"
+                                        ? "bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
+                                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    }`}
+                            >
+                                <Settings size={18} className="mr-3" />
+                                <span>Security</span>
+                            </button>
+
+                            <Link
+                                to="/profile/auctions"
+                                className="w-full flex items-center px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <Package size={18} className="mr-3" />
+                                <span>My Auctions</span>
+                            </Link>
+
+                            <Link
+                                to="/profile/bids"
+                                className="w-full flex items-center px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <Gavel size={18} className="mr-3" />
+                                <span>My Bids</span>
+                            </Link>
+
+                            <Link
+                                to="/profile/favorites"
+                                className="w-full flex items-center px-4 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <Heart size={18} className="mr-3" />
+                                <span>Favorites</span>
+                            </Link>
+
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center px-4 py-2 rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                                <LogOut size={18} className="mr-3" />
+                                <span>Logout</span>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="lg:col-span-3">
+                    {/* Success and Error Messages */}
+                    {success && (
+                        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md flex justify-between">
+                            {success}
+                            <button onClick={() => setSuccess("")}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md flex justify-between">
+                            {error}
+                            <button onClick={() => setError("")}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                    )}
+                    
+                    {/* Render Outlet for nested routes or profile content */}
+                    {isNestedRoute ? (
+                        <Outlet />
+                    ) : (
+                        <>
+                            {/* Profile content goes here */}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default Profile

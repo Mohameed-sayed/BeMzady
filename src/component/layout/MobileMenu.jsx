@@ -54,6 +54,9 @@ const MobileMenu = ({ setIsMenuOpen }) => {
                     <Link to="/auctions" className="block py-2 hover:text-rose-600 transition-colors" onClick={closeMenu}>
                         Auctions
                     </Link>
+                    <Link to="/items" className="block py-2 hover:text-rose-600 transition-colors" onClick={closeMenu}>
+                        Items
+                    </Link>
                     <Link to="/categories" className="block py-2 hover:text-rose-600 transition-colors" onClick={closeMenu}>
                         Categories
                     </Link>
