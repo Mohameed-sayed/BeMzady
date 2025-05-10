@@ -28,7 +28,13 @@ const Navbar = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await categoryService.getCategories({ limit: 5 })
+                // Use the updated categoryService with pagination
+                const response = await categoryService.getCategories({
+                    page: 1,
+                    limit: 5
+                })
+
+                console.log("Navbar categories response:", response.data)
                 setCategories(response.data.data)
                 setError(null)
             } catch (error) {
@@ -100,6 +106,13 @@ const Navbar = () => {
                             Auctions
                             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-rose-600 group-hover:w-full transition-all duration-300"></span>
                         </Link>
+                        <Link
+                            to="/items"
+                            className="relative group text-gray-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors duration-200"
+                        >
+                            Items
+                            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-rose-600 group-hover:w-full transition-all duration-300"></span>
+                        </Link>
                         <div className="relative group">
                             <button className="relative group text-gray-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 transition-colors duration-200">
                                 Categories
@@ -139,6 +152,7 @@ const Navbar = () => {
                                     >
                                         View All Categories
                                     </Link>
+
                                 </div>
                             </div>
                         </div>

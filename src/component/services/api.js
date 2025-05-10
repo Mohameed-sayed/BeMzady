@@ -90,6 +90,12 @@ export const categoryService = {
 export const itemService = {
     getItems: (params) => api.get("/items", { params }),
     getItemById: (id) => api.get(`/items/${id}`),
+    createItem: (formData) =>
+        api.post("/items", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        }),
     getItemReviews: (itemId) => api.get(`/items/${itemId}/reviews`),
     addReview: (itemId, review) => api.post(`/items/${itemId}/reviews`, review),
     updateReview: (itemId, review) => api.put(`/items/${itemId}/reviews`, review),
@@ -120,10 +126,39 @@ export const userService = {
 }
 
 export const cartService = {
-    getCart: () => api.get("/cart"),
-    addToCart: (itemId, quantity) => api.post("/cart/add", { itemId, quantity }),
-    removeFromCart: (itemId) => api.delete("/cart/remove", { data: { itemId } }),
-    clearCart: () => api.delete("/cart/clear"),
+    getCart: () => {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+            return Promise.reject(new Error("User not authenticated"));
+        }
+        return api.get("/cart");
+    },
+    addToCart: (itemId, quantity) => {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+            return Promise.reject(new Error("User not authenticated"));
+        }
+        // Ensure quantity is a valid number
+        const validQuantity = parseInt(quantity) || 1;
+        return api.post("/cart/add", {
+            itemId,
+            quantity: validQuantity
+        });
+    },
+    removeFromCart: (itemId) => {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+            return Promise.reject(new Error("User not authenticated"));
+        }
+        return api.delete("/cart/remove", { data: { itemId } });
+    },
+    clearCart: () => {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+            return Promise.reject(new Error("User not authenticated"));
+        }
+        return api.delete("/cart/clear");
+    },
 }
 
 export const messageService = {

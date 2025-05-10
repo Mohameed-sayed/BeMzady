@@ -1,33 +1,37 @@
-/* eslint-disable no-unused-vars */
 import React, { useState, useContext, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { api } from "../component/services/api"
-import { AuthContext } from "../component/contexts/AuthContext"
+import { categoryService, itemService } from "./services/api"
+import { AuthContext } from "./contexts/AuthContext"
 import { toast } from "react-toastify"
 
-const AddProduct = () => {
+const AddItem = () => {
     const navigate = useNavigate()
     const { user } = useContext(AuthContext)
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
-        name: "",
+        title: "",
         description: "",
         price: "",
         quantity: "",
-        categoryId: "",
-        sellerId: user?.id || "",
-        image: null,
+        category: "",
+        seller: user?._id || localStorage.getItem("user_id") || "",
+        itemImage: null,
     })
 
     useEffect(() => {
         // Fetch categories when component mounts
         const fetchCategories = async () => {
             try {
-                const response = await api.get("/categories")
-                setCategories(response.data)
+                const response = await categoryService.getCategories({ limit: 100 })
+                // Make sure we're accessing the correct data structure
+                setCategories(response.data.data || [])
+                console.log("Categories fetched:", response.data)
             } catch (error) {
+                console.error("Error fetching categories:", error)
                 toast.error("Failed to fetch categories")
+                // Initialize with empty array to prevent map errors
+                setCategories([])
             }
         }
         fetchCategories()
@@ -45,7 +49,7 @@ const AddProduct = () => {
         const file = e.target.files[0]
         setFormData(prev => ({
             ...prev,
-            image: file
+            itemImage: file
         }))
     }
 
@@ -55,22 +59,32 @@ const AddProduct = () => {
 
         try {
             const formDataToSend = new FormData()
-            Object.keys(formData).forEach(key => {
-                if (formData[key] !== null) {
-                    formDataToSend.append(key, formData[key])
-                }
-            })
 
-            await api.post("/products", formDataToSend, {
-                headers: {
-                    "Content-Type": "multipart/form-data"
-                }
-            })
+            // Add all the text fields
+            formDataToSend.append("title", formData.title)
+            formDataToSend.append("description", formData.description)
+            formDataToSend.append("price", formData.price)
+            formDataToSend.append("quantity", formData.quantity)
+            formDataToSend.append("category", formData.category)
 
-            toast.success("Product added successfully!")
-            navigate("/products")
+            // Add the seller ID
+            const sellerId = user?._id || localStorage.getItem("user_id")
+            formDataToSend.append("seller", sellerId)
+
+            // Add the image if it exists
+            if (formData.itemImage) {
+                formDataToSend.append("itemImage", formData.itemImage)
+            }
+
+            // Use the itemService to create the item
+            const response = await itemService.createItem(formDataToSend)
+
+            console.log("Item created:", response.data)
+            toast.success("Item added successfully!")
+            navigate("/items")
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to add product")
+            console.error("Error creating item:", error)
+            toast.error(error.response?.data?.message || "Failed to add item")
         } finally {
             setLoading(false)
         }
@@ -78,14 +92,14 @@ const AddProduct = () => {
 
     return (
         <div className="max-w-2xl mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-6">Add New Product</h1>
+            <h1 className="text-2xl font-bold mb-6">Add New Item</h1>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
                     <input
                         type="text"
-                        name="name"
-                        value={formData.name}
+                        name="title"
+                        value={formData.title}
                         onChange={handleChange}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -134,15 +148,15 @@ const AddProduct = () => {
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Category</label>
                     <select
-                        name="categoryId"
-                        value={formData.categoryId}
+                        name="category"
+                        value={formData.category}
                         onChange={handleChange}
                         required
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option value="">Select a category</option>
-                        {categories.map(category => (
-                            <option key={category.id} value={category.id}>
+                        {Array.isArray(categories) && categories.map(category => (
+                            <option key={category._id} value={category._id}>
                                 {category.name}
                             </option>
                         ))}
@@ -150,7 +164,7 @@ const AddProduct = () => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Product Image</label>
+                    <label className="block text-sm font-medium text-gray-700">Item Image</label>
                     <input
                         type="file"
                         accept="image/*"
@@ -171,7 +185,7 @@ const AddProduct = () => {
                         disabled={loading}
                         className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                     >
-                        {loading ? "Adding..." : "Add Product"}
+                        {loading ? "Adding..." : "Add Item"}
                     </button>
                 </div>
             </form>
@@ -179,4 +193,4 @@ const AddProduct = () => {
     )
 }
 
-export default AddProduct 
+export default AddItem
