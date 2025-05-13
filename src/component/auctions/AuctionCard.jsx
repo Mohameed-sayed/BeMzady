@@ -66,7 +66,7 @@ const AuctionCard = ({ auction }) => {
             }
             setIsFavorite(!isFavorite)
         } catch (error) {
-            console.error("Error toggling favorite:", error)
+            console.error("Error toggling favorite:", error) 
         }
     }
 

@@ -85,6 +85,31 @@ export const categoryService = {
     getCategories: (params) => api.get("/categories", { params }),
     getCategoryById: (id) => api.get(`/categories/${id}`),
     getSubcategoriesByCategory: (categoryId) => api.get(`/categories/${categoryId}/Subcategories`),
+    getCategoryWithAuctions: (id) => api.get(`/categories/${id}/auctions`),
+}
+
+export const subcategoryService = {
+    // Public endpoints
+    getSubcategories: (params) => api.get("/subcategories", { params }),
+    getSubcategoryById: (id) => api.get(`/subcategories/${id}`),
+    getSubcategoriesByCategory: (categoryId) => api.get(`/subcategories/category/${categoryId}`),
+
+    // Admin-only endpoints (protected)
+    createSubcategory: (data) => api.post("/subcategories", data, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+    }),
+    updateSubcategory: (id, data) => api.put(`/subcategories/${id}`, data, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+    }),
+    deleteSubcategory: (id) => api.delete(`/subcategories/${id}`, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+    })
 }
 
 export const itemService = {
@@ -94,7 +119,9 @@ export const itemService = {
         api.post("/items", formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
             },
+            timeout: 60000, // Increase timeout to 60 seconds for file uploads
         }),
     getItemReviews: (itemId) => api.get(`/items/${itemId}/reviews`),
     addReview: (itemId, review) => api.post(`/items/${itemId}/reviews`, review),

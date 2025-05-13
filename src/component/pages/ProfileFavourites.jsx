@@ -1,5 +1,4 @@
-"use client"
-
+import React from "react"
 import { useState, useEffect, useContext } from "react"
 import { Link } from "react-router-dom"
 import { AuthContext } from "../contexts/AuthContext"
@@ -19,7 +18,7 @@ const ProfileFavorites = () => {
             setLoading(true)
             const response = await userService.getFavorites()
             console.log("Favorites response:", response.data)
-            setFavorites(response.data.data || [])
+            setFavorites(response?.data?.data || [])
             setError(null)
         } catch (error) {
             console.error("Error fetching favorites:", error)
@@ -74,10 +73,10 @@ const ProfileFavorites = () => {
                             You haven't added any items or auctions to your favorites yet.
                         </p>
                         <Link
-                            to="/auctions"
+                            to="/items"
                             className="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 transition-colors"
                         >
-                            Browse Auctions
+                            Browse Items
                         </Link>
                     </div>
                 </div>
@@ -88,7 +87,7 @@ const ProfileFavorites = () => {
                             <div key={item._id} className="p-4">
                                 <div className="flex items-start">
                                     <img
-                                        src={item.itemImage || "/placeholder.svg"}
+                                        src={item.item_cover || "/placeholder.svg"}
                                         alt={item.title}
                                         className="w-20 h-20 rounded-md object-cover"
                                     />
